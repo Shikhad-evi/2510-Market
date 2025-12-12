@@ -1,10 +1,25 @@
-import app from "#app";
-import db from "#db/client";
+require('dotenv').config();
+const express = require('express');
+const bodyParser = require('body-parser');
 
-const PORT = process.env.PORT ?? 3000;
+const usersRouter = require('./routes/users');
+const productsRouter = require('./routes/products');
+const ordersRouter = require('./routes/orders');
 
-await db.connect();
+const app = express();
+app.use(bodyParser.json());
 
+app.use('/users', usersRouter);
+app.use('/products', productsRouter);
+app.use('/orders', ordersRouter);
+
+// Error handler (simple)
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}...`);
+  console.log(`Market API listening on port ${PORT}`);
 });
