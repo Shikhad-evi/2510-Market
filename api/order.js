@@ -5,8 +5,7 @@ const db = require('../db');
 const { requireUser } = require('./_utils');
 
 /**
- * 🔒 POST /orders
- * - 400 if no date
+ * POST /orders
  * - creates a new order by logged-in user and sends with 201
  */
 router.post('/', requireUser, async (req, res, next) => {
@@ -25,7 +24,7 @@ router.post('/', requireUser, async (req, res, next) => {
 });
 
 /**
- * 🔒 GET /orders
+ * GET /orders
  * - sends array of all orders made by logged-in user
  */
 router.get('/', requireUser, async (req, res, next) => {
@@ -38,7 +37,7 @@ router.get('/', requireUser, async (req, res, next) => {
 });
 
 /**
- * 🔒 GET /orders/:id
+ * GET /orders/:id
  * - 404 if the order does not exist
  * - 403 if logged-in user is not the user who made the order
  */
@@ -56,7 +55,7 @@ router.get('/:id', requireUser, async (req, res, next) => {
 });
 
 /**
- * 🔒 POST /orders/:id/products
+ * POST /orders/:id/products
  * - 404 if order doesn't exist
  * - 403 if logged-in user not the one who made the order
  * - 400 if body missing productId or quantity
@@ -101,7 +100,7 @@ router.post('/:id/products', requireUser, async (req, res, next) => {
 });
 
 /**
- * 🔒 GET /orders/:id/products
+ * GET /orders/:id/products
  * - 404 if order doesn't exist
  * - 403 if logged-in user not the one who made the order
  * - sends array of products in the order
