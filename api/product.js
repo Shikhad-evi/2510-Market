@@ -1,64 +1,38 @@
-// routes/products.js
 const express = require('express');
+const client = require('../db/client');
+const { requireUser } = require('../middleware/auth');
+
 const router = express.Router();
-const db = require('../db');
-const { requireUser } = require('./_utils');
 
-/**
- * GET /products
- * - sends array of all products
- */
-router.get('/', async (req, res, next) => {
-  try {
-    const result = await db.query(`SELECT id, title, description, price FROM products ORDER BY id`);
-    res.json(result.rows);
-  } catch (err) {
-    next(err);
-  }
+router.get('/', async (_, res) => {
+const { rows } = await client.query('SELECT * FROM products');
+res.send(rows);
 });
 
-/**
- * GET /products/:id
- * - 404 if not exist
- */
-router.get('/:id', async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const result = await db.query(`SELECT id, title, description, price FROM products WHERE id = $1`, [id]);
-    const product = result.rows[0];
-    if (!product) return res.status(404).json({ error: 'Product not found' });
-    res.json(product);
-  } catch (err) {
-    next(err);
-  }
+router.get('/:id', async (req, res) => {
+const { rows: [product] } = await client.query(
+'SELECT * FROM products WHERE id=$1',
+[req.params.id]
+);
+if (!product) return res.sendStatus(404);
+res.send(product);
 });
 
-/**
- * 🔒 GET /products/:id/orders
- * - must be protected
- * - sends 404 if product doesn't exist (even if user logged in)
- * - sends array of all orders made by the user that include this product
- */
-router.get('/:id/orders', requireUser, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    // check product exists
-    const prodRes = await db.query(`SELECT id FROM products WHERE id = $1`, [id]);
-    if (!prodRes.rows[0]) return res.status(404).json({ error: 'Product not found' });
+router.get('/:id/orders', requireUser, async (req, res) => {
+const { rows: product } = await client.query(
+'SELECT id FROM products WHERE id=$1',
+[req.params.id]
+);
+if (!product.length) return res.sendStatus(404);
 
-    // find orders by this user that include the product
-    const rows = await db.query(`
-      SELECT o.id, o.date, o.note, o.user_id, op.quantity
-      FROM orders o
-      JOIN orders_products op ON o.id = op.order_id
-      WHERE o.user_id = $1 AND op.product_id = $2
-      ORDER BY o.date DESC
-    `, [req.user.id, id]);
+const { rows } = await client.query(
+`SELECT o.* FROM orders o
+JOIN orders_products op ON o.id=op.order_id
+WHERE op.product_id=$1 AND o.user_id=$2`,
+[req.params.id, req.user.id]
+);
 
-    res.json(rows.rows);
-  } catch (err) {
-    next(err);
-  }
+res.send(rows);
 });
 
 module.exports = router;
